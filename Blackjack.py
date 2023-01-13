@@ -40,7 +40,7 @@ class Deck:
     def deal(self):
         return self.deck.pop() # deals a single card
 
-class Hand:
+class Hand: # object for a player hand
     
     def __init__(self):
         self.cards = []  
@@ -58,17 +58,20 @@ class Hand:
             self.value -= 10
             self.aces -= 1
             
-class Chips:
+class Chips: # object for a seated player
     
     def __init__(self):
         self.total = 100  # starting chip count
         self.bet = 0
+        self.is_in = True # checks if player bet is still in to win when dealer busts
+        self.is_playing = False # checks if player is seated to play
         
     def win_bet(self):
         self.total += self.bet
     
     def lose_bet(self):
         self.total -= self.bet
+
 
 #GAME FUNCTIONS
 def take_bet(chips): #takes bet from player
@@ -130,7 +133,7 @@ def show_all(player,dealer): #shown to player after game
     print(f'Player total: {player.value}')
     print('----------------------------------')
 
-#GAME END CONDITIONS
+#ROUND END CONDITIONS
 def player_busts(chips):
     print('Busted!')
     chips.lose_bet()
@@ -151,25 +154,92 @@ def dealer_wins(chips):
 def push():
     print("It's a tie.")
 
-#GAME START
-player1_chips = Chips()
+#PLAYER SETUP
+player1 = Chips()
+player2 = Chips()
+player3 = Chips()
+player4 = Chips()
+player5 = Chips()
+player6 = Chips()
+player7 = Chips()
+
+player_list = {1 : player1, 2 : player2, player3 : 3, player4 : 4,
+            player5 : 5, player6 : 6, player7 : 7}
+
+#Check how many are playing
 while True:
-    # Print an opening statement
-    print('Blackjack!')
+    try:
+        total_players = int(input('How many players are starting?'))
+    except:
+        print('Enter a number')
+        continue
+    else:
+        if total_players > 7 or total_players < 0:
+            print('Player number must be between 1 and 7')
+            continue
+        for n in range(1,total_players):
+            player_list.get(n).is_playing = True
+
+        break
+
+#GAME START
+while True:
+
     
-    # Create & shuffle the deck, deal two cards to each player
+    print('Blackjack!')
+
+    
+    # Create & shuffle the deck
     new_deck = Deck()
+    if total_players > 3:
+        second_deck = Deck()
+        new_deck.deck.extend(second_deck.deck) # add a second 52 card deck if more than 3 players
     new_deck.shuffle()
     
-    player = Hand()
+    # Initialize hand objects 
+    player1_hand = Hand()
+    player2_hand = Hand()
+    player3_hand = Hand()
+    player4_hand = Hand()
+    player5_hand = Hand()
+    player6_hand = Hand()
+    player7_hand = Hand()
     dealer = Hand()
+
+    # Deal cards to players in the game
+    if player1.is_playing == True:
+        player1_hand.add_card(new_deck.deal)
+        player1_hand.add_card(new_deck.deal)
     
-    player.add_card(new_deck.deal())
+    if player2.is_playing == True:
+        player2_hand.add_card(new_deck.deal)
+        player2_hand.add_card(new_deck.deal) 
+
+    if player3.is_playing == True:
+        player3_hand.add_card(new_deck.deal)
+        player3_hand.add_card(new_deck.deal)
+    
+    if player4.is_playing == True:
+        player4_hand.add_card(new_deck.deal)
+        player4_hand.add_card(new_deck.deal)
+
+    if player5.is_playing == True:
+        player5_hand.add_card(new_deck.deal)
+        player5_hand.add_card(new_deck.deal)
+
+    if player6.is_playing == True:
+        player6_hand.add_card(new_deck.deal)
+        player6_hand.add_card(new_deck.deal)
+
+    if player7.is_playing == True:
+        player7_hand.add_card(new_deck.deal)
+        player7_hand.add_card(new_deck.deal)
+   
+    # Deal cards to dealer
     dealer.add_card(new_deck.deal())
-    player.add_card(new_deck.deal())
     dealer.add_card(new_deck.deal())
     
-    
+    """""
     # Prompt the Player for their bet
     take_bet(player_chips)
     
@@ -225,5 +295,5 @@ while True:
             continue
                 
     print('Game end')
-            
+    """
     break
