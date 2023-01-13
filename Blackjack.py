@@ -152,7 +152,7 @@ def push():
     print("It's a tie.")
 
 #GAME START
-player_chips = Chips()
+player1_chips = Chips()
 while True:
     # Print an opening statement
     print('Blackjack!')
