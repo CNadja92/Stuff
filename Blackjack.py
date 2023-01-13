@@ -134,7 +134,7 @@ def show_some(player,dealer): # shown to player during game, takes Hand objects
     print(f'Player {player.num} total: {player.value}')
     print('----------------------------------')
     
-def show_all(player,dealer): # shown to player after game, takes Hand objects
+def show_all(player,dealer): # Shown to player after game, takes Hand objects
     print('Dealer:')
     for card in dealer.cards:
         print(card)
@@ -149,16 +149,17 @@ def show_all(player,dealer): # shown to player after game, takes Hand objects
 #HAND CONDITIONS
 ################
 
-def blackjack(chips, hand): # checks for blackjack
+def blackjack(chips, hand): # Checks for blackjack
     if hand.value == 21:
         print('BLACKJACK!')
         chips.win_bet()*3
+        chips.is_in = False # Takes them out of current hand being played
 
 def player_busts(chips):
     print('Busted!')
     chips.lose_bet()
     chips.is_in = False
-    #playing = False
+    playing = False
 
 def player_wins(chips):
     print('Player wins!')
@@ -187,11 +188,11 @@ player5 = Chips()
 player6 = Chips()
 player7 = Chips()
 
-# iterable dict of player/chip objects with numbered keys
+# Iterable dict of player/chip objects with numbered keys
 player_list = {1 : player1, 2 : player2, 3 :player3, 4 : player4,
             5 : player5, 6 : player6, 7 : player7}
 
-#Check how many are playing
+# Check how many are playing
 while True:
     try:
         total_players = int(input('How many players are starting?'))
@@ -206,7 +207,7 @@ while True:
             player_list.get(n).is_playing = True
         break
 
-current_players = total_players #tracks players still in the game (still pending use)
+current_players = total_players # Tracks players still in the game (still pending use)
 
 ###########
 #GAME START
@@ -219,7 +220,7 @@ while True: # Game is running
     new_deck = Deck()
     if total_players > 3:
         second_deck = Deck()
-        new_deck.deck.extend(second_deck.deck) # add a second 52 card deck if more than 3 players
+        new_deck.deck.extend(second_deck.deck) # Add a second 52 card deck if more than 3 players
     new_deck.shuffle()
     
     # Initialize hands
@@ -232,7 +233,7 @@ while True: # Game is running
     player7_hand = Hand(7)
     dealer = Hand(0)
 
-    # iterable dict of player hand objects with numbered keys
+    # Iterable dict of player hand objects with numbered keys
     hand_list = {1 : player1_hand, 2 : player2_hand, 3 : player3_hand, 4 : player4_hand,
                 5 : player5_hand, 6 : player6_hand, 7 : player7_hand}
 
@@ -283,35 +284,27 @@ while True: # Game is running
             show_some(player_list.get(n),dealer)
             blackjack(hand_list.get(n))
 
-
+    # Loop for player round
     while True:  
         # Prompt for Players to Hit or Stand
         for n in range(1,total_players+1):
-            playing = True
-            while playing == True:
+            playing = True # global variable checking if current hand is being played or if hand is finished by stand/bust
+            while playing:
                 if (player_list.get(n).is_playing and player_list.get(n).is_in) == True and hand_list.get(n).cards < 5: 
                     hit_or_stand(new_deck,hand_list.get(n))
+                    show_some(hand_list.get(n),dealer)
                     if hand_list.get(n).value > 21:
-                
-
-
-                show_some(player_list.get(n),dealer)
-
-
-
-        if len(player.cards) < 5:
-            hit_or_stand(new_deck,player)
-        
-            # Show cards (but keep one dealer card hidden)
-            show_some(player,dealer)
-        
-            # If player's hand exceeds 21, run player_busts() and break out of loop
-            if player.value > 21:
-                player_busts(player_chips)
-                show_all(player,dealer)
+                        player_busts(player_list.get(n))
+                playing = False
                 break
-        else:
-            break
+        break
+    
+    # Loop for dealer round
+    while dealer.value < 17: # Dealer hits if their hand value is less than 17
+        if len(dealer.cards) < 5:
+            hit(new_deck, dealer)
+            continue
+        break
 
     # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
     if player.value <= 21:
