@@ -118,6 +118,7 @@ def hit(deck,hand): #deals card to player, called in next function
 
 def hit_or_stand(deck,hand): # asks player for game action
     global playing  # to control an upcoming while loop
+    show_player(hand)
     result = input('Hit or Stand?')
     if result[0].lower() == 'h':
         print('Hitting')
@@ -126,12 +127,12 @@ def hit_or_stand(deck,hand): # asks player for game action
         print('Standing')
         playing = False
 
-def show_dealer_hidden(dealer):
+def show_dealer_hidden(dealer): # Takes Hand objects
     print('Dealer:')
     print('[Hidden]', dealer.cards[1])
     print('----------------------------------')
 
-def show_dealer(dealer):
+def show_dealer(dealer): # Takes Hand objects
     d_hand = ''
     print('Dealer:')
     for card in dealer.cards:
@@ -140,39 +141,13 @@ def show_dealer(dealer):
     print(f'Dealer total: {dealer.value}')
     print('----------------------------------')
 
-def show_player(player):
+def show_player(player): # Takes Hand objects
     p_hand = ''
-    print(f'\nPlayer {player.num}:')
+    print(f'Player {player.num}:')
     for card in player.cards:
         p_hand = p_hand + str(card) + ', '
     print(p_hand)
     print(f'Player {player.num} total: {player.value}')
-    print('----------------------------------')
-
-def show_some(player,dealer): # shown to player during game, takes Hand objects
-    c_hand = ''
-    print('Dealer:')
-    print('[Hidden]', dealer.cards[1]) 
-    print(f'\nPlayer {player.num}:')
-    for card in player.cards:
-        c_hand = c_hand + str(card) + ', '
-    print(c_hand)
-    print(f'Player {player.num} total: {player.value}')
-    print('----------------------------------')
-    
-def show_all(player,dealer): # Shown to player after game, takes Hand objects
-    c_hand = ''
-    d_hand = ''
-    print('Dealer:')
-    for card in dealer.cards:
-        d_hand = d_hand + str(card) + ', '
-    print(d_hand)
-    print(f'Dealer total: {dealer.value}')
-    print('\nPlayer:')
-    for card in player.cards:
-        c_hand = c_hand
-        print(card)
-    print(f'Player total: {player.value}')
     print('----------------------------------')
 
 ################
@@ -182,7 +157,8 @@ def show_all(player,dealer): # Shown to player after game, takes Hand objects
 def blackjack(chips, hand): # Checks for blackjack
     if hand.value == 21:
         print('BLACKJACK!')
-        chips.win_bet()*3
+        for _ in range(3):
+            chips.win_bet()
         chips.is_in = False # Takes them out of current hand being played
 
 def player_busts(chips):
@@ -204,7 +180,7 @@ def dealer_wins(chips, hand):
     chips.lose_bet()
     
 def push(hand):
-    print(f"Player {hand.value} ties with the dealer.")
+    print(f"Player {hand.num} ties with the dealer.")
 
 ##############
 #PLAYER SETUP5
@@ -230,7 +206,7 @@ while True:
         print('Enter a number')
         continue
     else:
-        if total_players > 7 or total_players < 0:
+        if total_players > 7 or total_players < 1:
             print('Player number must be between 1 and 7')
             continue
         for n in range(1,total_players+1):
@@ -310,11 +286,12 @@ while True: # Game is running
     dealer.add_card(new_deck.deal())
     
     # Show cards (but keep one dealer card hidden) and check for Blackjack
-    show_dealer_hidden(dealer)
-    for n in range(1,total_players+1):
-        if player_list.get(n).is_playing == True: 
-            show_player(hand_list.get(n))
-            blackjack(hand_list.get(n)) # Iterate through dict to return Hand object at key n
+    if current_players > 0:
+        show_dealer_hidden(dealer)
+        for n in range(1,total_players+1):
+            if player_list.get(n).is_playing == True: 
+                show_player(hand_list.get(n))
+                blackjack(player_list.get(n),hand_list.get(n)) # Iterate through dict to return Hand object at key n
 
     # Loop for player round
     while True:  
@@ -322,14 +299,15 @@ while True: # Game is running
         for n in range(1,total_players+1):
             playing = True # Global variable checking if player is hitting/standing
             while playing:
-                if (player_list.get(n).is_playing and player_list.get(n).is_in) == True and hand_list.get(n).cards < 5: 
+                if (player_list.get(n).is_playing and player_list.get(n).is_in) == True and len(hand_list.get(n).cards) < 5: 
                     hit_or_stand(new_deck,hand_list.get(n))
                     show_dealer_hidden(dealer)
                     show_player(hand_list.get(n))
                     ###show_some(hand_list.get(n),dealer)
                     if hand_list.get(n).value > 21:
                         player_busts(player_list.get(n))
-                playing = False
+                        break
+                    continue
                 break
         break
     
@@ -348,6 +326,8 @@ while True: # Game is running
             if player_list.get(n).is_playing and player_list.get(n).is_in:
                 player_list.get(n).win_bet()
     else:
+        print('#'*15)
+        print('#'*15)
         for n in range(1,total_players+1): # Compare hand values with dealer and decide winning bets
             if player_list.get(n).is_playing and player_list.get(n).is_in:
                 show_dealer(dealer)
@@ -359,17 +339,18 @@ while True: # Game is running
                 else:
                     push(hand_list.get(n))
 
-    # Inform Players of their chips total
-    print('-'*15)
-    for n in range(1,total_players+1):
-        if player_list.get(n).is_playing:
-            print(f'-Player {n}: {player_list.get(n).total}-')
-    print('-'*15)
-  
-    # Ask to play again
+     # Ask to play again
     if current_players > 0:
+        print('-'*15) # Inform Players of their chips total
+        for n in range(1,total_players+1):
+            if player_list.get(n).is_playing:
+                print(f'-Player {n}: {player_list.get(n).total}-')
+        print('-'*15)
         retry = input('New round? (y/n)')
         if retry[0].lower() == 'y':
+            for n in range(1,total_players+1):
+                if player_list.get(n).is_playing:
+                    player_list.get(n).is_in = True
             playing = True
             continue
                 
