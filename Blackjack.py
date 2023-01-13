@@ -11,6 +11,7 @@ values = {'Two':2, 'Three':3, 'Four':4, 'Five':5, 'Six':6, 'Seven':7, 'Eight':8,
          'Queen':10, 'King':10, 'Ace':11}
 
 playing = True
+current_players = 0
 
 #############
 #GAME OBJECTS
@@ -87,6 +88,7 @@ class Chips: # object for a seated player, attributes considered for chips and p
 def take_bet(chips): #takes bet from player
     print('Place your bet! All bets must be in increments of 5 chips.')
     print(f'Available chips: {chips.total}')
+    global current_players
     if chips.total == 0:
         print("You're out of chips...")
         chips.is_playing = False
@@ -99,6 +101,7 @@ def take_bet(chips): #takes bet from player
         else:
             if chips.bet == 0: # player betting 0 has them exit the table and game
                 chips.is_playing = False
+                current_players -= 1 # Removes player from current player amount
             if chips.bet > chips.total:
                 print('Not enough chips!')
                 continue
@@ -123,6 +126,29 @@ def hit_or_stand(deck,hand): # asks player for game action
         print('Standing')
         playing = False
 
+def show_dealer_hidden(dealer):
+    print('Dealer:')
+    print('[Hidden]', dealer.cards[1])
+    print('----------------------------------')
+
+def show_dealer(dealer):
+    d_hand = ''
+    print('Dealer:')
+    for card in dealer.cards:
+        d_hand = d_hand + str(card) + ', '
+    print(d_hand)
+    print(f'Dealer total: {dealer.value}')
+    print('----------------------------------')
+
+def show_player(player):
+    p_hand = ''
+    print(f'\nPlayer {player.num}:')
+    for card in player.cards:
+        p_hand = p_hand + str(card) + ', '
+    print(p_hand)
+    print(f'Player {player.num} total: {player.value}')
+    print('----------------------------------')
+
 def show_some(player,dealer): # shown to player during game, takes Hand objects
     c_hand = ''
     print('Dealer:')
@@ -135,12 +161,16 @@ def show_some(player,dealer): # shown to player during game, takes Hand objects
     print('----------------------------------')
     
 def show_all(player,dealer): # Shown to player after game, takes Hand objects
+    c_hand = ''
+    d_hand = ''
     print('Dealer:')
     for card in dealer.cards:
-        print(card)
+        d_hand = d_hand + str(card) + ', '
+    print(d_hand)
     print(f'Dealer total: {dealer.value}')
     print('\nPlayer:')
     for card in player.cards:
+        c_hand = c_hand
         print(card)
     print(f'Player total: {player.value}')
     print('----------------------------------')
@@ -161,20 +191,20 @@ def player_busts(chips):
     chips.is_in = False
     playing = False
 
-def player_wins(chips):
-    print('Player wins!')
+def player_wins(chips, hand):
+    print(f'Player {hand.num} wins a round!')
     chips.win_bet()
 
 def dealer_busts(chips):
     print('Dealer busts!')
     chips.win_bet()
     
-def dealer_wins(chips):
-    print('Dealer wins!')
+def dealer_wins(chips, hand):
+    print(f'Dealer wins against Player {hand.num}!')
     chips.lose_bet()
     
-def push():
-    print("It's a tie.")
+def push(hand):
+    print(f"Player {hand.value} ties with the dealer.")
 
 ##############
 #PLAYER SETUP5
@@ -204,10 +234,10 @@ while True:
             print('Player number must be between 1 and 7')
             continue
         for n in range(1,total_players+1):
-            player_list.get(n).is_playing = True
+            player_list.get(n).is_playing = True # Iterate through dict to return Chips object at key n
         break
 
-current_players = total_players # Tracks players still in the game (still pending use)
+current_players = total_players # Tracks players still in the game 
 
 ###########
 #GAME START
@@ -218,7 +248,7 @@ while True: # Game is running
      
     # Create and shuffle the deck
     new_deck = Deck()
-    if total_players > 3:
+    if current_players > 3:
         second_deck = Deck()
         new_deck.deck.extend(second_deck.deck) # Add a second 52 card deck if more than 3 players
     new_deck.shuffle()
@@ -244,6 +274,7 @@ while True: # Game is running
             take_bet(player_list.get(n))
             if player_list.get(n).bet == 0: # take_bet sets is_playing attribute to False
                 print(f'Goodbye Player {n}!')
+                current_players -= 1 
 
     # Deal cards to players in the game
     if player1.is_playing == True:
@@ -279,20 +310,23 @@ while True: # Game is running
     dealer.add_card(new_deck.deal())
     
     # Show cards (but keep one dealer card hidden) and check for Blackjack
+    show_dealer_hidden(dealer)
     for n in range(1,total_players+1):
         if player_list.get(n).is_playing == True: 
-            show_some(player_list.get(n),dealer)
-            blackjack(hand_list.get(n))
+            show_player(hand_list.get(n))
+            blackjack(hand_list.get(n)) # Iterate through dict to return Hand object at key n
 
     # Loop for player round
     while True:  
         # Prompt for Players to Hit or Stand
         for n in range(1,total_players+1):
-            playing = True # global variable checking if current hand is being played or if hand is finished by stand/bust
+            playing = True # Global variable checking if player is hitting/standing
             while playing:
                 if (player_list.get(n).is_playing and player_list.get(n).is_in) == True and hand_list.get(n).cards < 5: 
                     hit_or_stand(new_deck,hand_list.get(n))
-                    show_some(hand_list.get(n),dealer)
+                    show_dealer_hidden(dealer)
+                    show_player(hand_list.get(n))
+                    ###show_some(hand_list.get(n),dealer)
                     if hand_list.get(n).value > 21:
                         player_busts(player_list.get(n))
                 playing = False
@@ -303,37 +337,38 @@ while True: # Game is running
     while dealer.value < 17: # Dealer hits if their hand value is less than 17
         if len(dealer.cards) < 5:
             hit(new_deck, dealer)
-            continue
+            continue  
         break
 
-    # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
-    if player.value <= 21:
-        while dealer.value < 17:
-            if len(dealer.cards) < 5:
-                hit(new_deck,dealer)
-                continue
-            break
-        # Show all cards
-        show_all(player,dealer)
-        # Run different winning scenarios
-        if dealer.value > 21:
-            dealer_busts(player_chips)
-        else:
-            if player.value == dealer.value:
-                push()
-            elif player.value > dealer.value:
-                player_wins(player_chips)
-            else:
-                dealer_wins(player_chips)
-                
-    
-    # Inform Player of their chips total 
-    print(f'Current chips: {player_chips.total}')
-    
-    
+    # Check player hands to dealer
+    if dealer.value > 21 and current_players > 0: # Dealer busts, players still in the hand win bet
+        show_dealer(dealer)
+        print('Dealer busts!')
+        for n in range(1,total_players+1):
+            if player_list.get(n).is_playing and player_list.get(n).is_in:
+                player_list.get(n).win_bet()
+    else:
+        for n in range(1,total_players+1): # Compare hand values with dealer and decide winning bets
+            if player_list.get(n).is_playing and player_list.get(n).is_in:
+                show_dealer(dealer)
+                show_player(hand_list.get(n))
+                if hand_list.get(n).value > dealer.value:
+                    player_wins(player_list.get(n), hand_list.get(n))
+                elif hand_list.get(n).value < dealer.value:
+                    dealer_wins(player_list.get(n), hand_list.get(n))
+                else:
+                    push(hand_list.get(n))
+
+    # Inform Players of their chips total
+    print('-'*15)
+    for n in range(1,total_players+1):
+        if player_list.get(n).is_playing:
+            print(f'-Player {n}: {player_list.get(n).total}-')
+    print('-'*15)
+  
     # Ask to play again
-    if player_chips.total > 0:
-        retry = input('Play again? (y/n)')
+    if current_players > 0:
+        retry = input('New round? (y/n)')
         if retry[0].lower() == 'y':
             playing = True
             continue
